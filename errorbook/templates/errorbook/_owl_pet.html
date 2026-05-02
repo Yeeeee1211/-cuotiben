@@ -1,0 +1,11 @@
+{% load svg_icons %}
+<div class="owl-icon{% if mood != 'happy' %} sad{% endif %}" title="{% if mood == 'happy' %}今天已经复习啦！{% else %}今天还没复习呢...{% endif %}">
+    {% if mood == 'happy' %}🦉{% else %}🦉{% endif %}
+</div>
+<div class="owl-info">
+    <span class="owl-level">Lv.{{ level }}</span>
+    <div class="owl-xp-bar">
+        <div class="owl-xp-fill" style="width:{{ xp_pct }}%"></div>
+    </div>
+    <span class="owl-mood">{% if mood == 'happy' %}继续加油！{% else %}今天还没复习呢...{% endif %}</span>
+</div>

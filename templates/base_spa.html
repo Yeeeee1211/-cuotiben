@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% load svg_icons %}
+
+{% block body %}
+<div class="app-layout">
+    <!-- 顶栏 -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
+            <a href="/errorbook/" style="display:flex;align-items:center;gap:12px;text-decoration:none">
+                <div class="topbar-logo">智</div>
+                <span class="topbar-brand">智学笔记</span>
+            </a>
+        </div>
+
+        <div class="topbar-center">
+            {% owl_pet %}
+        </div>
+
+        <div class="topbar-right">
+            <span class="user-name">{{ request.user.username }}</span>
+            <a href="{% url 'logout' %}" class="logout-btn">退出</a>
+        </div>
+    </div>
+
+    <!-- 主体 -->
+    <div class="main-body">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-tool active" data-route="/errorbook/" title="错题列表">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+                <span class="tool-label">错题</span>
+            </div>
+            <div class="sidebar-tool" data-route="/errorbook/import/" title="导入错题">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="tool-label">导入</span>
+            </div>
+            <div class="sidebar-tool" data-route="/errorbook/review/" title="复习模式">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                <span class="tool-label">复习</span>
+            </div>
+            <div class="sidebar-tool" data-route="/errorbook/knowledge-graph/" title="知识图谱">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="17" x2="19" y2="17"/></svg>
+                <span class="tool-label">图谱</span>
+            </div>
+            <div class="sidebar-tool" data-route="/errorbook/stats/" title="学习统计">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>
+                <span class="tool-label">统计</span>
+            </div>
+        </nav>
+
+        <main class="content-area" id="content-area">
+            {% block spa_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

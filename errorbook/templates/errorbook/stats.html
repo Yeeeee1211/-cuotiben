@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+{% load svg_icons %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习统计 - 智学笔记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .nav { background: #4285f4; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h1 { font-size: 18px; } .nav a { color: #fff; text-decoration: none; font-size: 14px; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .back { display: inline-block; margin-bottom: 12px; color: #4285f4; text-decoration: none; font-size: 14px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .stat-card .num { font-size: 24px; font-weight: 700; color: #4285f4; }
+        .stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .section-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: #4285f4; border-bottom: 2px solid #e3edff; padding-bottom: 8px; }
+        .chart-bar { display: flex; align-items: center; margin-bottom: 8px; }
+        .chart-label { width: 70px; font-size: 13px; flex-shrink: 0; }
+        .chart-fill { height: 24px; background: #4285f4; border-radius: 6px; min-width: 20px; display: flex; align-items: center; padding: 0 8px; color: #fff; font-size: 12px; font-weight: 600; }
+        .chart-fill.orange { background: #fbbc04; color: #333; }
+        .chart-fill.red { background: #ea4335; }
+        .chart-fill.green { background: #34a853; }
+        .bar-container { flex: 1; background: #f0f0f0; border-radius: 6px; height: 24px; margin-left: 8px; }
+        .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 600; color: #fff; }
+        .bar-fill.blue { background: #4285f4; }
+        .bar-fill.orange { background: #fbbc04; color: #333; }
+        .bar-fill.red { background: #ea4335; }
+        .bar-fill.green { background: #34a853; }
+        .bar-count { margin-left: 8px; font-size: 12px; color: #888; min-width: 30px; }
+        .empty { text-align: center; padding: 30px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1 style="display:flex;align-items:center;gap:8px">{% svg_icon 'chart' %} 学习统计</h1>
+        {% owl_pet %}
+        <a href="{% url 'index' %}">返回首页</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="back">&larr; 返回首页</a>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="num">{{ total }}</div>
+                <div class="label">错题总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ reviewed_count }}</div>
+                <div class="label">已复习</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ correct_count }}</div>
+                <div class="label">已掌握</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ accuracy }}%</div>
+                <div class="label">正确率</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ mastery_rate }}%</div>
+                <div class="label">掌握率</div>
+            </div>
+        </div>
+
+        {% if subject_stats %}
+        <div class="card">
+            <div class="section-title" style="display:flex;align-items:center;gap:4px">{% svg_icon 'folder' %} 学科分布</div>
+            {% for item in subject_stats %}
+            <div class="chart-bar">
+                <span class="chart-label">{{ item.subject|default:"未分类" }}</span>
+                <div class="bar-container">
+                    {% widthratio item.count total 100 as pct %}
+                    <div class="bar-fill blue" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">
+                        {{ item.count }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if error_type_stats %}
+        <div class="card">
+            <div class="section-title" style="display:flex;align-items:center;gap:4px">{% svg_icon 'warning' %} 错误类型分布</div>
+            {% for item in error_type_stats %}
+            <div class="chart-bar">
+                <span class="chart-label">{{ item.display }}</span>
+                <div class="bar-container">
+                    {% widthratio item.count total 100 as pct %}
+                    <div class="bar-fill orange" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">
+                        {{ item.count }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if difficulty_stats %}
+        <div class="card">
+            <div class="section-title" style="display:flex;align-items:center;gap:4px">{% svg_icon 'chart' %} 难度分布</div>
+            {% for item in difficulty_stats %}
+            <div class="chart-bar">
+                <span class="chart-label">{{ item.display }}</span>
+                <div class="bar-container">
+                    {% widthratio item.count total 100 as pct %}
+                    <div class="bar-fill green" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">
+                        {{ item.count }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if interval_dist %}
+        <div class="card">
+            <div class="section-title" style="display:flex;align-items:center;gap:4px">{% svg_icon 'refresh' %} 复习间隔分布</div>
+            {% for item in interval_dist %}
+            <div class="chart-bar">
+                <span class="chart-label">{{ item.label }}</span>
+                <div class="bar-container">
+                    {% widthratio item.count 5 100 as pct %}
+                    <div class="bar-fill blue" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">
+                        {{ item.count }}
+                    </div>
+                </div>
+                <span class="bar-count">{{ item.count }}题</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not total %}
+        <div class="empty">
+            <div style="margin-bottom:12px">{% svg_icon 'chart' %}</div>
+            <p>还没有数据，开始导入错题吧！</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

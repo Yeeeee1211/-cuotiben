@@ -1,0 +1,124 @@
+{% load svg_icons %}
+<!-- 随机出题 -->
+<button id="random-question-btn" data-subject="{{ current_subject|default:'' }}" class="btn btn-primary" style="width:100%;padding:18px;font-size:16px;font-weight:600;border-radius:12px">
+    🎲 随机复习一道错题
+</button>
+
+<!-- 今日待复习 -->
+{% if due_today %}
+<div style="background:#fff3e0;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:10px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:20px">⏰</span>
+    <div>
+        <strong style="color:#e65100">今日 {{ due_today_count }} 道 | 本周 {{ due_week_count }} 道</strong>
+        <br><span style="font-size:12px;color:var(--text-muted)">按遗忘曲线复习，记得更牢</span>
+    </div>
+</div>
+
+<!-- 今日到期列表 -->
+{% for q in due_today %}
+<a href="/errorbook/review/{{ q.id }}/" class="question-item" style="text-decoration:none;color:inherit;background:#fff8e1;border-radius:10px;margin-bottom:6px">
+    <div class="q-left">
+        <div class="q-dot new"></div>
+        <span class="q-title">{{ q.title|default:"未命名错题" }}</span>
+    </div>
+    <div class="q-right">
+        {% if q.subject %}<span class="q-tag tag-math">{{ q.subject }}</span>{% endif %}
+        <span style="font-size:11px;color:#f59e0b">待复习</span>
+    </div>
+</a>
+{% empty %}
+{% endfor %}
+{% endif %}
+
+<!-- 遗忘曲线分布 -->
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">📊 遗忘曲线复习分布</span>
+    </div>
+    {% for item in interval_dist %}
+    <div class="chart-bar">
+        <span class="chart-label">{{ item.label }}</span>
+        <div class="chart-track">
+            <div class="chart-fill {% cycle 'blue' 'orange' 'green' 'blue' 'orange' %}" style="width:{% widthratio item.count 5 100 as pct %}{% if pct > 0 %}{{ pct }}%{% else %}4%{% endif %}">{{ item.count }}</div>
+        </div>
+        <span class="chart-count">{{ item.count }}题</span>
+    </div>
+    {% empty %}
+    <div class="empty-state"><p>暂无复习数据</p></div>
+    {% endfor %}
+</div>
+
+<!-- 复习日历 -->
+{% if calendar_weeks %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">📅 {{ month_label }}</span>
+    </div>
+    <table class="calendar">
+        <thead><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr></thead>
+        <tbody>
+        {% for week in calendar_weeks %}
+        <tr>
+        {% for cell in week %}
+            <td>
+            {% if cell %}
+                <div class="cal-day{% if cell.day == today %} today{% endif %}{% if cell.count > 0 %} has-review{% endif %}">
+                    {{ cell.day }}
+                    {% if cell.count > 0 %}<div class="cal-dot"></div>{% endif %}
+                </div>
+            {% endif %}
+            </td>
+        {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- 筛选 + 错题列表 -->
+<div class="main-card" style="flex:1;min-height:320px;overflow-y:auto">
+    <div class="card-header">
+        <span class="card-title">📋 全部错题</span>
+    </div>
+    <form class="filter-row" method="get" action="/errorbook/review/">
+        <select name="subject">
+            <option value="">全部学科</option>
+            <option value="数学" {% if current_subject == '数学' %}selected{% endif %}>数学</option>
+            <option value="语文" {% if current_subject == '语文' %}selected{% endif %}>语文</option>
+            <option value="英语" {% if current_subject == '英语' %}selected{% endif %}>英语</option>
+            <option value="物理" {% if current_subject == '物理' %}selected{% endif %}>物理</option>
+            <option value="化学" {% if current_subject == '化学' %}selected{% endif %}>化学</option>
+            <option value="生物" {% if current_subject == '生物' %}selected{% endif %}>生物</option>
+            <option value="历史" {% if current_subject == '历史' %}selected{% endif %}>历史</option>
+            <option value="地理" {% if current_subject == '地理' %}selected{% endif %}>地理</option>
+            <option value="政治" {% if current_subject == '政治' %}selected{% endif %}>政治</option>
+        </select>
+        <select name="error_type">
+            <option value="">全部类型</option>
+            <option value="concept" {% if current_error_type == 'concept' %}selected{% endif %}>概念模糊</option>
+            <option value="calculation" {% if current_error_type == 'calculation' %}selected{% endif %}>计算失误</option>
+            <option value="reading" {% if current_error_type == 'reading' %}selected{% endif %}>审题偏差</option>
+            <option value="method" {% if current_error_type == 'method' %}selected{% endif %}>方法错误</option>
+            <option value="blind_spot" {% if current_error_type == 'blind_spot' %}selected{% endif %}>知识盲区</option>
+        </select>
+        <button type="submit" class="btn btn-primary" style="font-size:12px">筛选</button>
+    </form>
+
+    <div style="font-size:12px;color:var(--text-muted)">共 {{ questions|length }} 道错题</div>
+
+    {% for q in questions %}
+    <a href="/errorbook/review/{{ q.id }}/" class="question-item" style="text-decoration:none;color:inherit">
+        <div class="q-left">
+            <div class="q-dot {% if q.is_mastered %}reviewed{% else %}new{% endif %}"></div>
+            <span class="q-title">{{ q.title|default:"未命名错题" }}</span>
+        </div>
+        <div class="q-right">
+            {% if q.subject %}<span class="q-tag tag-math">{{ q.subject }}</span>{% endif %}
+            <span style="font-size:11px;color:var(--text-muted)">第{{ q.review_count }}次</span>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state"><p>没有符合条件的错题</p></div>
+    {% endfor %}
+</div>

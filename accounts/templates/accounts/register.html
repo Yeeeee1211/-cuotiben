@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+{% load svg_icons %}
+
+{% block title %}注册 - 智学笔记{% endblock %}
+
+{% block extra_head %}
+<style>
+    .s1{top:8%;left:10%}.s2{top:18%;left:30%}.s3{top:5%;left:55%}.s4{top:25%;left:80%}.s5{top:40%;left:15%}.s6{top:35%;left:70%}.s7{top:50%;left:25%}.s8{top:45%;left:85%}.s9{top:60%;left:12%}.s10{top:55%;left:60%}.s11{top:70%;left:35%}.s12{top:65%;left:90%}.s13{top:80%;left:20%}.s14{top:75%;left:75%}.s15{top:90%;left:50%}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+
+    <div class="star s1"></div><div class="star s2"></div><div class="star s3"></div>
+    <div class="star s4"></div><div class="star s5"></div><div class="star s6"></div>
+    <div class="star s7"></div><div class="star s8"></div><div class="star s9"></div>
+    <div class="star s10"></div><div class="star s11"></div><div class="star s12"></div>
+    <div class="star s13"></div><div class="star s14"></div><div class="star s15"></div>
+
+    <div class="auth-card">
+        <div class="brand">
+            <div class="logo-icon">智</div>
+            <span class="brand-name">智学笔记</span>
+        </div>
+        <p class="subtitle">创建你的 AI 错题本账号</p>
+
+        {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="auth-field">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required placeholder="请设置用户名" autocomplete="username">
+            </div>
+            <div class="auth-field">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required placeholder="请设置密码" autocomplete="new-password">
+            </div>
+            <button type="submit" class="auth-btn">注 册</button>
+        </form>
+
+        <div class="auth-footer">
+            已有账号？<a href="{% url 'login' %}">去登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

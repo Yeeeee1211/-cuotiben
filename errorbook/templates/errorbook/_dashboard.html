@@ -1,0 +1,77 @@
+{% load svg_icons %}
+<!-- 统计卡片行 -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-num blue">{{ total_questions }}</div>
+        <div class="stat-label">错题总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num green">{{ total_reviewed }}</div>
+        <div class="stat-label">已复习</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num green">{{ mastered }}</div>
+        <div class="stat-label">已掌握</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num amber">{{ due_today }}</div>
+        <div class="stat-label">今日待复习</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num sky">{{ mastery_pct }}%</div>
+        <div class="stat-label">掌握率</div>
+    </div>
+</div>
+
+<!-- 今日复习提醒 -->
+{% if due_today > 0 %}
+<div style="background:#fff3e0;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:10px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:20px">⏰</span>
+    <div>
+        <strong style="color:#e65100">你有 {{ due_today }} 道错题需要今天复习</strong>
+        <br><a href="/errorbook/review/" style="font-size:13px;color:#3b82f6;font-weight:600">开始复习 →</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- 最近错题列表 -->
+<div class="main-card" style="flex:1">
+    <div class="card-header">
+        <span class="card-title">📋 最近错题</span>
+        <a href="/errorbook/questions/" class="btn btn-outline" style="font-size:12px">查看全部</a>
+    </div>
+    {% for q in recent_questions %}
+    <a href="/errorbook/question/{{ q.id }}/" class="question-item" style="text-decoration:none;color:inherit">
+        <div class="q-left">
+            <div class="q-dot {% if q.is_mastered %}reviewed{% elif q.review_count > 0 %}new{% else %}old{% endif %}"></div>
+            <span class="q-title">{{ q.title|default:"未命名错题" }}</span>
+        </div>
+        <div class="q-right">
+            {% if q.subject %}
+            <span class="q-tag {% if q.subject == '数学' %}tag-math{% elif q.subject == '语文' %}tag-cn{% elif q.subject == '英语' %}tag-en{% elif q.subject == '物理' %}tag-phy{% elif q.subject == '化学' %}tag-chem{% elif q.subject == '生物' %}tag-bio{% elif q.subject == '历史' %}tag-hist{% elif q.subject == '地理' %}tag-geo{% elif q.subject == '政治' %}tag-pol{% endif %}">{{ q.subject }}</span>
+            {% endif %}
+            <span class="q-date">{{ q.created_at|date:"m-d" }}</span>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <p>还没有错题</p>
+        <a href="/errorbook/import/" style="display:inline-block;margin-top:8px;font-size:14px">去导入第一道错题</a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 学科标签 -->
+{% if subjects %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">📂 学科分布</span>
+    </div>
+    <div class="kp-tags">
+        {% for name, count in subjects %}
+        <a href="/errorbook/questions/?subject={{ name|urlencode }}" class="kp-tag green">{{ name }} ({{ count }})</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

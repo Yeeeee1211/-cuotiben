@@ -1,0 +1,65 @@
+{% load svg_icons %}
+<div class="main-card">
+    <div class="card-header">
+        <span class="card-title">📋 错题列表</span>
+        <div style="display:flex;gap:8px">
+            <a href="/errorbook/import/" class="btn btn-primary" style="font-size:12px">+ 导入</a>
+        </div>
+    </div>
+
+    <form class="filter-row" method="get" action="/errorbook/questions/">
+        <select name="subject">
+            <option value="">全部学科</option>
+            <option value="数学" {% if current_subject == '数学' %}selected{% endif %}>数学</option>
+            <option value="语文" {% if current_subject == '语文' %}selected{% endif %}>语文</option>
+            <option value="英语" {% if current_subject == '英语' %}selected{% endif %}>英语</option>
+            <option value="物理" {% if current_subject == '物理' %}selected{% endif %}>物理</option>
+            <option value="化学" {% if current_subject == '化学' %}selected{% endif %}>化学</option>
+            <option value="生物" {% if current_subject == '生物' %}selected{% endif %}>生物</option>
+            <option value="历史" {% if current_subject == '历史' %}selected{% endif %}>历史</option>
+            <option value="地理" {% if current_subject == '地理' %}selected{% endif %}>地理</option>
+            <option value="政治" {% if current_subject == '政治' %}selected{% endif %}>政治</option>
+        </select>
+        <select name="error_type">
+            <option value="">全部类型</option>
+            <option value="concept" {% if current_error_type == 'concept' %}selected{% endif %}>概念模糊</option>
+            <option value="calculation" {% if current_error_type == 'calculation' %}selected{% endif %}>计算失误</option>
+            <option value="reading" {% if current_error_type == 'reading' %}selected{% endif %}>审题偏差</option>
+            <option value="method" {% if current_error_type == 'method' %}selected{% endif %}>方法错误</option>
+            <option value="blind_spot" {% if current_error_type == 'blind_spot' %}selected{% endif %}>知识盲区</option>
+        </select>
+        <select name="difficulty">
+            <option value="">全部难度</option>
+            <option value="easy" {% if current_difficulty == 'easy' %}selected{% endif %}>简单</option>
+            <option value="medium" {% if current_difficulty == 'medium' %}selected{% endif %}>中等</option>
+            <option value="hard" {% if current_difficulty == 'hard' %}selected{% endif %}>困难</option>
+        </select>
+        <input type="text" name="search" placeholder="搜索关键词..." value="{{ search|default:'' }}" style="min-width:140px">
+        {% if kp %}<input type="hidden" name="kp" value="{{ kp }}">{% endif %}
+        <button type="submit" class="btn btn-primary" style="font-size:12px">筛选</button>
+    </form>
+
+    <div style="font-size:12px;color:var(--text-muted)">共 {{ questions|length }} 道错题</div>
+
+    {% for q in questions %}
+    <a href="/errorbook/question/{{ q.id }}/" class="question-item" style="text-decoration:none;color:inherit">
+        <div class="q-left">
+            <div class="q-dot {% if q.is_mastered %}reviewed{% elif q.review_count > 0 %}new{% else %}old{% endif %}"></div>
+            <span class="q-title">{{ q.title|default:"未命名错题" }}</span>
+        </div>
+        <div class="q-right">
+            {% if q.subject %}
+            <span class="q-tag {% if q.subject == '数学' %}tag-math{% elif q.subject == '语文' %}tag-cn{% elif q.subject == '英语' %}tag-en{% elif q.subject == '物理' %}tag-phy{% elif q.subject == '化学' %}tag-chem{% elif q.subject == '生物' %}tag-bio{% elif q.subject == '历史' %}tag-hist{% elif q.subject == '地理' %}tag-geo{% elif q.subject == '政治' %}tag-pol{% endif %}">{{ q.subject }}</span>
+            {% endif %}
+            {% if q.difficulty %}<span style="font-size:11px;color:var(--text-muted)">{{ q.get_difficulty_display }}</span>{% endif %}
+            <span class="q-date">{{ q.created_at|date:"m-d" }}</span>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <p>还没有错题</p>
+        <a href="/errorbook/import/" style="display:inline-block;margin-top:8px;font-size:14px">去导入第一道错题</a>
+    </div>
+    {% endfor %}
+</div>

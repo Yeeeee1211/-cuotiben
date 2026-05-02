@@ -1,0 +1,34 @@
+{% load svg_icons %}
+<div class="main-card">
+    <div class="card-header">
+        <span class="card-title">🧠 知识图谱</span>
+        <span style="font-size:12px;color:var(--text-muted)">按学科查看知识点掌握情况</span>
+    </div>
+    <div style="display:flex;gap:12px;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+        <span>🟢 掌握较好 (≤2题)</span>
+        <span>🟡 需要关注 (3-5题)</span>
+        <span>🔴 薄弱环节 (6+题)</span>
+    </div>
+</div>
+
+{% for group in graph_data %}
+<div class="subject-kp-card">
+    <div class="skp-header">
+        <span class="skp-name">{{ group.subject }}</span>
+        <span class="skp-count">{{ group.total }} 道错题</span>
+    </div>
+    <div class="kp-tags">
+        {% for item in group.items %}
+        <button class="kp-tag {{ item.color }}" data-subject="{{ group.subject }}" data-kp="{{ item.name }}">
+            {{ item.name }} <span style="font-size:10px;opacity:.7">({{ item.count }})</span>
+        </button>
+        {% endfor %}
+    </div>
+</div>
+{% empty %}
+<div class="empty-state">
+    <div class="empty-icon">🧠</div>
+    <p>还没有错题数据</p>
+    <a href="/errorbook/import/" style="font-size:14px">去导入第一道错题</a>
+</div>
+{% endfor %}

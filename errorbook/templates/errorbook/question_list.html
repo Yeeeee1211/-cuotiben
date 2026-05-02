@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+{% load svg_icons %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题列表 - 智学笔记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .nav { background: #4285f4; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h1 { font-size: 18px; } .nav a { color: #fff; text-decoration: none; font-size: 14px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .back { display: inline-block; margin-bottom: 12px; color: #4285f4; text-decoration: none; font-size: 14px; }
+        .filters { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; gap: 10px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
+        .filters select:focus, .filters input:focus { outline: none; border-color: #4285f4; }
+        .filters button { padding: 8px 16px; background: #4285f4; color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .count-info { font-size: 13px; color: #888; margin-bottom: 12px; }
+        .question-card { background: #fff; border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; justify-content: space-between; align-items: center; }
+        .question-card .title { font-size: 15px; font-weight: 600; }
+        .question-card .title a { color: #333; text-decoration: none; }
+        .question-card .title a:hover { color: #4285f4; }
+        .question-card .meta { font-size: 12px; color: #999; margin-top: 4px; }
+        .question-card .actions a { margin-left: 10px; font-size: 13px; color: #4285f4; text-decoration: none; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 4px; }
+        .badge-subject { background: #e3f2fd; color: #1565c0; }
+        .badge-difficulty { background: #fff3e0; color: #e65100; }
+        .badge-error { background: #fce4ec; color: #c62828; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1 style="display:flex;align-items:center;gap:8px">{% svg_icon 'clipboard' %} 错题列表</h1>
+        {% owl_pet %}
+        <a href="{% url 'index' %}">返回首页</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="back">&larr; 返回首页</a>
+
+        <form class="filters" method="get">
+            <select name="subject">
+                <option value="">全部学科</option>
+                <option value="数学" {% if current_subject == '数学' %}selected{% endif %}>数学</option>
+                <option value="语文" {% if current_subject == '语文' %}selected{% endif %}>语文</option>
+                <option value="英语" {% if current_subject == '英语' %}selected{% endif %}>英语</option>
+                <option value="物理" {% if current_subject == '物理' %}selected{% endif %}>物理</option>
+                <option value="化学" {% if current_subject == '化学' %}selected{% endif %}>化学</option>
+                <option value="生物" {% if current_subject == '生物' %}selected{% endif %}>生物</option>
+                <option value="历史" {% if current_subject == '历史' %}selected{% endif %}>历史</option>
+                <option value="地理" {% if current_subject == '地理' %}selected{% endif %}>地理</option>
+                <option value="政治" {% if current_subject == '政治' %}selected{% endif %}>政治</option>
+            </select>
+            <select name="error_type">
+                <option value="">全部类型</option>
+                <option value="concept" {% if current_error_type == 'concept' %}selected{% endif %}>概念模糊</option>
+                <option value="calculation" {% if current_error_type == 'calculation' %}selected{% endif %}>计算失误</option>
+                <option value="reading" {% if current_error_type == 'reading' %}selected{% endif %}>审题偏差</option>
+                <option value="method" {% if current_error_type == 'method' %}selected{% endif %}>方法错误</option>
+                <option value="blind_spot" {% if current_error_type == 'blind_spot' %}selected{% endif %}>知识盲区</option>
+            </select>
+            <select name="difficulty">
+                <option value="">全部难度</option>
+                <option value="easy" {% if current_difficulty == 'easy' %}selected{% endif %}>简单</option>
+                <option value="medium" {% if current_difficulty == 'medium' %}selected{% endif %}>中等</option>
+                <option value="hard" {% if current_difficulty == 'hard' %}selected{% endif %}>困难</option>
+            </select>
+            <input type="text" name="search" placeholder="搜索关键词..." value="{{ search }}">
+            {% if kp %}<input type="hidden" name="kp" value="{{ kp }}">{% endif %}
+            <button type="submit">筛选</button>
+        </form>
+
+        <div class="count-info">共 {{ questions|length }} 道错题</div>
+
+        {% for q in questions %}
+        <div class="question-card">
+            <div>
+                <div class="title"><a href="{% url 'question_detail' q.id %}">{{ q.title|default:"未命名错题" }}</a></div>
+                <div class="meta">
+                    {{ q.created_at|date:"Y-m-d H:i" }}
+                    {% if q.subject %}<span class="badge badge-subject">{{ q.subject }}</span>{% endif %}
+                    {% if q.difficulty %}<span class="badge badge-difficulty">{{ q.get_difficulty_display }}</span>{% endif %}
+                    {% if q.error_type %}<span class="badge badge-error">{{ q.get_error_type_display }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="actions">
+                <a href="{% url 'review_question' q.id %}">复习</a>
+                <a href="{% url 'question_detail' q.id %}">详情</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty">
+            <div style="margin-bottom:12px">{% svg_icon 'clipboard' %}</div>
+            <p>还没有错题</p>
+            <a href="{% url 'import_question' %}" style="color:#4285f4;text-decoration:none;font-size:14px">去导入第一道错题</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

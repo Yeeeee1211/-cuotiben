@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+{% load svg_icons %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导入错题 - 智学笔记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .nav {
+            background: #4285f4; color: #fff; padding: 14px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav h1 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .nav a { color: #fff; text-decoration: none; font-size: 14px; }
+        .nav a:hover { opacity: .8; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; color: #4285f4; text-decoration: none; font-size: 14px; }
+        .back:hover { text-decoration: underline; }
+        .card {
+            background: #fff; border-radius: 12px; padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+        h2 { font-size: 17px; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        .error { background: #fce4e4; color: #d32f2f; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+        .upload-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .upload-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            padding: 24px 16px; border: 2px dashed #ccc; border-radius: 12px;
+            cursor: pointer; transition: all .25s; background: #fafbfc; color: #555; font-size: 14px;
+        }
+        .upload-btn:hover { border-color: #4285f4; background: #f0f4ff; color: #4285f4; }
+        .upload-btn svg { transition: transform .25s; }
+        .upload-btn:hover svg { transform: scale(1.1); }
+
+        /* Result preview (outside crop container) */
+        #preview { display: none; max-width: 100%; max-height: 300px; margin: 0 auto 16px; border-radius: 8px; border: 2px solid #e0e0e0; }
+
+        /* Crop container */
+        #cropContainer { display: none; position: relative; margin: 0 auto 12px; user-select: none; -webkit-user-select: none; touch-action: none; }
+        #cropImage { display: block; max-width: 100%; width: 100%; border-radius: 8px; }
+        #cropRect {
+            position: absolute;
+            border: 2px dashed #4285f4;
+            cursor: move;
+            z-index: 3;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+        }
+        .crop-handle {
+            position: absolute; width: 14px; height: 14px;
+            background: #fff; border: 2px solid #4285f4; border-radius: 50%;
+            z-index: 4;
+        }
+        .crop-handle.tl { top: -7px; left: -7px; cursor: nw-resize; }
+        .crop-handle.tr { top: -7px; right: -7px; cursor: ne-resize; }
+        .crop-handle.bl { bottom: -7px; left: -7px; cursor: sw-resize; }
+        .crop-handle.br { bottom: -7px; right: -7px; cursor: se-resize; }
+
+        .crop-actions { display: none; gap: 10px; margin-bottom: 16px; }
+        .crop-actions button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-crop-confirm { background: #4285f4; color: #fff; }
+        .btn-crop-confirm:hover { background: #3367d6; }
+        .btn-crop-skip { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-crop-skip:hover { background: #eee; }
+
+        .crop-hint { display: none; text-align: center; font-size: 12px; color: #888; margin-bottom: 8px; }
+
+        #cancelBtn { display: none; width: 100%; padding: 10px; background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; margin-bottom: 8px; }
+        #cancelBtn:hover { background: #eee; }
+
+        #submitBtn {
+            width: 100%; padding: 14px; background: #4285f4; color: #fff;
+            border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: background .2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        #submitBtn:hover { background: #3367d6; }
+        #submitBtn:disabled { background: #bbb; cursor: not-allowed; }
+
+        .loading { display: none; text-align: center; padding: 24px 0; }
+        .loading .step-list { font-size: 12px; color: #999; margin-top: 8px; }
+        .loading .step-list span { display: block; padding: 3px 0; }
+        .loading .step-list .active { color: #4285f4; font-weight: 600; }
+
+        .compressing { display: none; text-align: center; padding: 16px 0; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1>{% svg_icon 'logo' %}导入错题</h1>
+        {% owl_pet %}
+        <a href="{% url 'index' %}">返回首页</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="back">{% svg_icon 'arrow_left' %}返回仪表盘</a>
+        <div class="card">
+            <h2>{% svg_icon 'camera' %}拍照或上传错题图片</h2>
+            {% if error %}<div class="error">{% svg_icon 'warning' %}{{ error }}</div>{% endif %}
+
+            <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_question' %}">
+                {% csrf_token %}
+                <div class="upload-options" id="uploadOptions">
+                    <div class="upload-btn" id="btnCamera" onclick="triggerCamera()">
+                        {% svg_icon 'camera' %}
+                        <span>拍照</span>
+                    </div>
+                    <div class="upload-btn" id="btnGallery" onclick="triggerGallery()">
+                        {% svg_icon 'folder' %}
+                        <span>从相册选择</span>
+                    </div>
+                </div>
+                <input type="file" id="cameraInput" name="image" accept="image/*" capture="environment" style="display:none">
+                <input type="file" id="galleryInput" name="image" accept="image/*" style="display:none">
+
+                <div class="compressing" id="compressing">
+                    {% svg_icon 'spinner' %}
+                    <p>正在处理图片...</p>
+                </div>
+
+                <!-- Final result preview (outside crop container -- no onload side effects) -->
+                <img id="preview" alt="处理结果">
+
+                <!-- Crop UI (separate image, only shown during cropping phase) -->
+                <div id="cropContainer">
+                    <img id="cropImage" alt="裁剪预览">
+                    <div id="cropRect">
+                        <div class="crop-handle tl" data-handle="tl"></div>
+                        <div class="crop-handle tr" data-handle="tr"></div>
+                        <div class="crop-handle bl" data-handle="bl"></div>
+                        <div class="crop-handle br" data-handle="br"></div>
+                    </div>
+                </div>
+                <p class="crop-hint" id="cropHint">拖动裁剪框选择错题区域，调整四角可缩放</p>
+
+                <div class="crop-actions" id="cropActions">
+                    <button type="button" class="btn-crop-skip" onclick="skipCrop()">跳过裁剪</button>
+                    <button type="button" class="btn-crop-confirm" onclick="confirmCrop()">确认裁剪</button>
+                </div>
+
+                <button type="button" id="cancelBtn" onclick="cancelPreview()">重新选择</button>
+
+                <button type="submit" id="submitBtn" disabled>
+                    {% svg_icon 'rocket' %} 开始识别
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                {% svg_icon 'loading' %}
+                <p>正在处理...</p>
+                <div class="step-list">
+                    <span class="active">① OCR文字识别</span>
+                    <span>② AI智能分析</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cameraInput = document.getElementById('cameraInput');
+        const galleryInput = document.getElementById('galleryInput');
+        const cropImage = document.getElementById('cropImage');
+        const preview = document.getElementById('preview');
+        const cropContainer = document.getElementById('cropContainer');
+        const cropRect = document.getElementById('cropRect');
+        const cropActions = document.getElementById('cropActions');
+        const cropHint = document.getElementById('cropHint');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const uploadOptions = document.getElementById('uploadOptions');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const compressing = document.getElementById('compressing');
+
+        let compressedBlob = null;
+        let activeInput = null;
+        let originalFile = null;
+        let cropData = null;
+
+        function triggerCamera() {
+            cameraInput.value = '';
+            cameraInput.click();
+            activeInput = cameraInput;
+        }
+
+        function triggerGallery() {
+            galleryInput.value = '';
+            galleryInput.click();
+            activeInput = galleryInput;
+        }
+
+        cameraInput.onchange = handleFileSelect;
+        galleryInput.onchange = handleFileSelect;
+
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalFile = file;
+            submitBtn.style.display = 'flex';
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#4285f4';
+            submitBtn.innerHTML = '{% svg_icon "rocket" %}开始识别';
+            preview.style.display = 'none';
+            compressing.style.display = 'none';
+
+            const url = URL.createObjectURL(file);
+            cropImage.src = url;
+            cropImage.onload = () => {
+                cropContainer.style.display = 'block';
+                cropActions.style.display = 'flex';
+                cropHint.style.display = 'block';
+                cancelBtn.style.display = 'block';
+                uploadOptions.style.display = 'none';
+                initCropRect();
+            };
+        }
+
+        function initCropRect() {
+            const imgW = cropImage.naturalWidth;
+            const imgH = cropImage.naturalHeight;
+            const displayW = cropImage.clientWidth;
+            const displayH = cropImage.clientHeight;
+
+            const cropW = imgW * 0.8;
+            const cropH = imgH * 0.8;
+            const cropX = (imgW - cropW) / 2;
+            const cropY = (imgH - cropH) / 2;
+
+            cropData = { x: cropX, y: cropY, w: cropW, h: cropH };
+
+            const scaleX = displayW / imgW;
+            const scaleY = displayH / imgH;
+
+            cropRect.style.left = (cropX * scaleX) + 'px';
+            cropRect.style.top = (cropY * scaleY) + 'px';
+            cropRect.style.width = (cropW * scaleX) + 'px';
+            cropRect.style.height = (cropH * scaleY) + 'px';
+        }
+
+        // ---- Drag & Resize ----
+        let dragging = null;
+        let dragStart = { x: 0, y: 0, left: 0, top: 0, width: 0, height: 0 };
+
+        function getDisplayScale() {
+            return {
+                sx: cropImage.clientWidth / cropImage.naturalWidth,
+                sy: cropImage.clientHeight / cropImage.naturalHeight
+            };
+        }
+
+        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+        cropRect.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('crop-handle')) {
+                dragging = e.target.dataset.handle;
+            } else {
+                dragging = 'move';
+            }
+            e.preventDefault();
+            dragStart = {
+                x: e.clientX,
+                y: e.clientY,
+                left: parseFloat(cropRect.style.left) || 0,
+                top: parseFloat(cropRect.style.top) || 0,
+                width: parseFloat(cropRect.style.width) || 0,
+                height: parseFloat(cropRect.style.height) || 0
+            };
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            const { sx, sy } = getDisplayScale();
+            const dx = e.clientX - dragStart.x;
+            const dy = e.clientY - dragStart.y;
+            const containerW = cropImage.clientWidth;
+            const containerH = cropImage.clientHeight;
+            const minW = 40, minH = 40;
+
+            let newLeft = dragStart.left, newTop = dragStart.top, newWidth = dragStart.width, newHeight = dragStart.height;
+
+            switch (dragging) {
+                case 'move':
+                    newLeft = clamp(dragStart.left + dx, 0, containerW - newWidth);
+                    newTop = clamp(dragStart.top + dy, 0, containerH - newHeight);
+                    break;
+                case 'tl':
+                    newLeft = clamp(dragStart.left + dx, 0, dragStart.left + dragStart.width - minW);
+                    newTop = clamp(dragStart.top + dy, 0, dragStart.top + dragStart.height - minH);
+                    newWidth = dragStart.width - (newLeft - dragStart.left);
+                    newHeight = dragStart.height - (newTop - dragStart.top);
+                    break;
+                case 'tr':
+                    newTop = clamp(dragStart.top + dy, 0, dragStart.top + dragStart.height - minH);
+                    newWidth = clamp(dragStart.width + dx, minW, containerW - dragStart.left);
+                    newHeight = dragStart.height - (newTop - dragStart.top);
+                    break;
+                case 'bl':
+                    newLeft = clamp(dragStart.left + dx, 0, dragStart.left + dragStart.width - minW);
+                    newWidth = dragStart.width - (newLeft - dragStart.left);
+                    newHeight = clamp(dragStart.height + dy, minH, containerH - dragStart.top);
+                    break;
+                case 'br':
+                    newWidth = clamp(dragStart.width + dx, minW, containerW - dragStart.left);
+                    newHeight = clamp(dragStart.height + dy, minH, containerH - dragStart.top);
+                    break;
+            }
+
+            cropRect.style.left = newLeft + 'px';
+            cropRect.style.top = newTop + 'px';
+            cropRect.style.width = newWidth + 'px';
+            cropRect.style.height = newHeight + 'px';
+
+            cropData.x = newLeft / sx;
+            cropData.y = newTop / sy;
+            cropData.w = newWidth / sx;
+            cropData.h = newHeight / sy;
+        });
+
+        document.addEventListener('mouseup', () => { dragging = null; });
+
+        // Touch support
+        cropRect.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('crop-handle')) {
+                dragging = e.target.dataset.handle;
+            } else {
+                dragging = 'move';
+            }
+            e.preventDefault();
+            const t = e.touches[0];
+            dragStart = {
+                x: t.clientX,
+                y: t.clientY,
+                left: parseFloat(cropRect.style.left) || 0,
+                top: parseFloat(cropRect.style.top) || 0,
+                width: parseFloat(cropRect.style.width) || 0,
+                height: parseFloat(cropRect.style.height) || 0
+            };
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!dragging) return;
+            e.preventDefault();
+            const { sx, sy } = getDisplayScale();
+            const t = e.touches[0];
+            const dx = t.clientX - dragStart.x;
+            const dy = t.clientY - dragStart.y;
+            const containerW = cropImage.clientWidth;
+            const containerH = cropImage.clientHeight;
+            const minW = 40, minH = 40;
+
+            let newLeft = dragStart.left, newTop = dragStart.top, newWidth = dragStart.width, newHeight = dragStart.height;
+
+            switch (dragging) {
+                case 'move':
+                    newLeft = clamp(dragStart.left + dx, 0, containerW - newWidth);
+                    newTop = clamp(dragStart.top + dy, 0, containerH - newHeight);
+                    break;
+                case 'tl':
+                    newLeft = clamp(dragStart.left + dx, 0, dragStart.left + dragStart.width - minW);
+                    newTop = clamp(dragStart.top + dy, 0, dragStart.top + dragStart.height - minH);
+                    newWidth = dragStart.width - (newLeft - dragStart.left);
+                    newHeight = dragStart.height - (newTop - dragStart.top);
+                    break;
+                case 'tr':
+                    newTop = clamp(dragStart.top + dy, 0, dragStart.top + dragStart.height - minH);
+                    newWidth = clamp(dragStart.width + dx, minW, containerW - dragStart.left);
+                    newHeight = dragStart.height - (newTop - dragStart.top);
+                    break;
+                case 'bl':
+                    newLeft = clamp(dragStart.left + dx, 0, dragStart.left + dragStart.width - minW);
+                    newWidth = dragStart.width - (newLeft - dragStart.left);
+                    newHeight = clamp(dragStart.height + dy, minH, containerH - dragStart.top);
+                    break;
+                case 'br':
+                    newWidth = clamp(dragStart.width + dx, minW, containerW - dragStart.left);
+                    newHeight = clamp(dragStart.height + dy, minH, containerH - dragStart.top);
+                    break;
+            }
+
+            cropRect.style.left = newLeft + 'px';
+            cropRect.style.top = newTop + 'px';
+            cropRect.style.width = newWidth + 'px';
+            cropRect.style.height = newHeight + 'px';
+            cropData.x = newLeft / sx;
+            cropData.y = newTop / sy;
+            cropData.w = newWidth / sx;
+            cropData.h = newHeight / sy;
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => { dragging = null; });
+
+        // ---- Show final result ----
+        function showResult(blob) {
+            compressedBlob = blob;
+            const url = URL.createObjectURL(blob);
+            preview.src = url;
+            preview.style.display = 'block';
+            cropContainer.style.display = 'none';
+            cropActions.style.display = 'none';
+            cropHint.style.display = 'none';
+            cropImage.src = '';
+            submitBtn.disabled = false;
+            submitBtn.style.background = '#34a853';
+            submitBtn.innerHTML = '{% svg_icon "rocket" %}开始识别';
+            submitBtn.style.display = 'flex';
+            cancelBtn.style.display = 'block';
+            compressing.style.display = 'none';
+        }
+
+        // ---- Crop / Skip ----
+        async function confirmCrop() {
+            if (!cropData || !originalFile) return;
+            compressing.style.display = 'block';
+            cropContainer.style.display = 'none';
+            cropActions.style.display = 'none';
+            cropHint.style.display = 'none';
+
+            try {
+                const img = new Image();
+                img.src = URL.createObjectURL(originalFile);
+                await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+
+                const canvas = document.createElement('canvas');
+                canvas.width = cropData.w;
+                canvas.height = cropData.h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, cropData.x, cropData.y, cropData.w, cropData.h, 0, 0, cropData.w, cropData.h);
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('裁剪失败')), 'image/jpeg', 0.9);
+                });
+
+                const finalBlob = await compressBlob(blob);
+                showResult(finalBlob);
+            } catch (err) {
+                alert('图片裁剪失败，请重试');
+                compressing.style.display = 'none';
+                cancelPreview();
+            }
+        }
+
+        async function skipCrop() {
+            if (!originalFile) return;
+            compressing.style.display = 'block';
+            cropContainer.style.display = 'none';
+            cropActions.style.display = 'none';
+            cropHint.style.display = 'none';
+
+            try {
+                const finalBlob = await compressBlob(originalFile);
+                showResult(finalBlob);
+            } catch (err) {
+                alert('图片处理失败，请重试');
+                compressing.style.display = 'none';
+                cancelPreview();
+            }
+        }
+
+        function compressBlob(input, maxW = 1920, maxH = 1920, quality = 0.75) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > maxW) { height = Math.round(height * maxW / width); width = maxW; }
+                    if (height > maxH) { width = Math.round(width * maxH / height); height = maxH; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('压缩失败'));
+                    }, 'image/jpeg', quality);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(input instanceof File ? input : new File([input], 'crop.jpg'));
+            });
+        }
+
+        function cancelPreview() {
+            cropImage.src = '';
+            preview.src = '';
+            preview.style.display = 'none';
+            cropContainer.style.display = 'none';
+            cropActions.style.display = 'none';
+            cropHint.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            uploadOptions.style.display = 'grid';
+            submitBtn.style.display = 'flex';
+            compressedBlob = null;
+            originalFile = null;
+            cropData = null;
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#4285f4';
+            submitBtn.innerHTML = '{% svg_icon "rocket" %}开始识别';
+            cameraInput.value = '';
+            galleryInput.value = '';
+        }
+
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (!compressedBlob) return;
+
+            submitBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            loading.style.display = 'block';
+            preview.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', compressedBlob, 'question_' + Date.now() + '.jpg');
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            try {
+                const resp = await fetch(uploadForm.action, { method: 'POST', body: formData });
+                const text = await resp.text();
+                document.documentElement.innerHTML = text;
+                setTimeout(() => {
+                    const steps = document.querySelectorAll('.step-list span');
+                    if (steps.length > 1) steps[1].classList.add('active');
+                }, 2000);
+            } catch (err) {
+                alert('上传失败，请检查网络连接后重试');
+                submitBtn.style.display = 'flex';
+                loading.style.display = 'none';
+                preview.style.display = 'block';
+            }
+        };
+
+        // Drag-and-drop support
+        document.body.ondragover = e => e.preventDefault();
+        document.body.ondrop = async (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) {
+                const dt = new DataTransfer();
+                dt.items.add(e.dataTransfer.files[0]);
+                activeInput = { files: dt.files, target: { files: dt.files } };
+                handleFileSelect({ target: { files: dt.files } });
+            }
+        };
+    </script>
+</body>
+</html>

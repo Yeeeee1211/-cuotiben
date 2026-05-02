@@ -1,0 +1,104 @@
+{% load svg_icons %}
+<!-- 统计卡片 -->
+<div class="stats-row" style="flex-wrap:wrap">
+    <div class="stat-card" style="min-width:100px">
+        <div class="stat-num blue">{{ total }}</div>
+        <div class="stat-label">错题总数</div>
+    </div>
+    <div class="stat-card" style="min-width:100px">
+        <div class="stat-num green">{{ reviewed_count }}</div>
+        <div class="stat-label">已复习</div>
+    </div>
+    <div class="stat-card" style="min-width:100px">
+        <div class="stat-num green">{{ correct_count }}</div>
+        <div class="stat-label">已掌握</div>
+    </div>
+    <div class="stat-card" style="min-width:100px">
+        <div class="stat-num sky">{{ accuracy }}%</div>
+        <div class="stat-label">正确率</div>
+    </div>
+    <div class="stat-card" style="min-width:100px">
+        <div class="stat-num sky">{{ mastery_rate }}%</div>
+        <div class="stat-label">掌握率</div>
+    </div>
+</div>
+
+<!-- 学科分布 -->
+{% if subject_stats %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">📂 学科分布</span>
+    </div>
+    {% for item in subject_stats %}
+    <div class="chart-bar">
+        <span class="chart-label">{{ item.subject|default:"未分类" }}</span>
+        <div class="chart-track">
+            {% widthratio item.count total 100 as pct %}
+            <div class="chart-fill blue" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">{{ item.count }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 错误类型分布 -->
+{% if error_type_stats %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">⚠️ 错误类型分布</span>
+    </div>
+    {% for item in error_type_stats %}
+    <div class="chart-bar">
+        <span class="chart-label">{{ item.display }}</span>
+        <div class="chart-track">
+            {% widthratio item.count total 100 as pct %}
+            <div class="chart-fill orange" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">{{ item.count }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 难度分布 -->
+{% if difficulty_stats %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">📈 难度分布</span>
+    </div>
+    {% for item in difficulty_stats %}
+    <div class="chart-bar">
+        <span class="chart-label">{{ item.display }}</span>
+        <div class="chart-track">
+            {% widthratio item.count total 100 as pct %}
+            <div class="chart-fill green" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">{{ item.count }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 复习间隔分布 -->
+{% if interval_dist %}
+<div class="main-card" style="flex:0 0 auto">
+    <div class="card-header">
+        <span class="card-title">🔄 复习间隔分布</span>
+    </div>
+    {% for item in interval_dist %}
+    <div class="chart-bar">
+        <span class="chart-label">{{ item.label }}</span>
+        <div class="chart-track">
+            {% widthratio item.count 5 100 as pct %}
+            <div class="chart-fill blue" style="width:{% if pct > 0 %}{{ pct }}%{% else %}5%{% endif %}">{{ item.count }}</div>
+        </div>
+        <span class="chart-count">{{ item.count }}题</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not total %}
+<div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <p>还没有数据，开始导入错题吧！</p>
+</div>
+{% endif %}

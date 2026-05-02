@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+{% load svg_icons %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复习模式 - 智学笔记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .nav { background: #4285f4; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h1 { font-size: 18px; } .nav a { color: #fff; text-decoration: none; font-size: 14px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .back { display: inline-block; margin-bottom: 12px; color: #4285f4; text-decoration: none; font-size: 14px; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .filters select, .filters button { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
+        .filters button { background: #4285f4; color: #fff; border: none; cursor: pointer; }
+        .random-btn { display: block; text-align: center; padding: 16px; background: #34a853; color: #fff; text-decoration: none; border-radius: 12px; font-size: 16px; font-weight: 600; margin-bottom: 16px; transition: transform .15s; }
+        .random-btn:hover { transform: translateY(-2px); }
+        .question-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+        .question-item:last-child { border-bottom: none; }
+        .question-item .title { font-size: 14px; font-weight: 600; }
+        .question-item .title a { color: #333; text-decoration: none; }
+        .question-item .title a:hover { color: #4285f4; }
+        .question-item .meta { font-size: 12px; color: #999; margin-top: 3px; }
+        .question-item .review-link { color: #4285f4; text-decoration: none; font-size: 13px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 4px; }
+        .badge-subject { background: #e3f2fd; color: #1565c0; }
+        .badge-error { background: #fce4ec; color: #c62828; }
+        .count-info { font-size: 13px; color: #888; margin-bottom: 12px; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .calendar { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .calendar th { text-align: center; font-size: 12px; color: #888; padding: 6px 0; font-weight: 600; }
+        .calendar td { text-align: center; padding: 4px; vertical-align: top; border-radius: 6px; }
+        .cal-day { display: block; padding: 6px 4px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: default; position: relative; min-height: 32px; }
+        .cal-day.has-review { background: #e8f0fe; cursor: pointer; }
+        .cal-day.has-review:hover { background: #d2e3fc; }
+        .cal-day.today { background: #4285f4; color: #fff; }
+        .cal-day.today.has-review { background: #4285f4; color: #fff; }
+        .cal-day.other { color: #ccc; cursor: default; }
+        .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fbbc04; margin: 0 1px; }
+        .cal-day.today .cal-dot { background: #fff; }
+        .max-review-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
+        .max-review-row input { width: 50px; padding: 4px 6px; border: 2px solid #e0e0e0; border-radius: 6px; text-align: center; font-size: 13px; }
+        .day-detail { margin-top: 8px; padding: 8px; background: #f9f9f9; border-radius: 8px; display: none; }
+        .day-detail.active { display: block; }
+        .day-detail .dq-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+        .day-detail .dq-item:last-child { border-bottom: none; }
+        .day-detail .dq-link { color: #4285f4; text-decoration: none; font-size: 12px; }
+        .day-detail .dq-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1 style="display:flex;align-items:center;gap:8px">{% svg_icon 'pencil' %} 复习模式</h1>
+        {% owl_pet %}
+        <a href="{% url 'index' %}">返回首页</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="back">&larr; 返回首页</a>
+
+        <div class="card">
+            <h2 style="font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:4px">{% svg_icon 'dice' %} 快速开始</h2>
+            <a href="{% url 'api_random' %}" onclick="event.preventDefault(); fetch(this.href).then(r=>r.json()).then(d=>{if(d.id)window.location='/errorbook/review/'+d.id+'/';else alert('暂无错题')})" class="random-btn" style="display:flex;align-items:center;justify-content:center;gap:6px">{% svg_icon 'target' %} 随机一题</a>
+        </div>
+
+        {% if due_today_count %}
+        <div class="card" style="background:#fff3e0;border-left:4px solid #fbbc04">
+            <h2 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:4px">{% svg_icon 'warning' %} 今日待复习 ({{ due_today_count }}题)</h2>
+            {% for q in due_today|slice:":5" %}
+            <div class="question-item">
+                <div>
+                    <div class="title"><a href="{% url 'review_question' q.id %}">{{ q.title|default:"未命名错题" }}</a></div>
+                    <div class="meta">
+                        {% if q.subject %}<span class="badge badge-subject">{{ q.subject }}</span>{% endif %}
+                        {{ q.next_review_date|date:"m-d H:i" }}
+                    </div>
+                </div>
+                <a href="{% url 'review_question' q.id %}" class="review-link">去复习 &rarr;</a>
+            </div>
+            {% endfor %}
+            {% if due_today_count > 5 %}<p style="text-align:center;font-size:13px;color:#888;margin-top:8px">还有 {{ due_today_count|add:"-5" }} 道题...</p>{% endif %}
+        </div>
+        {% endif %}
+
+        {% if interval_dist %}
+        <div class="card">
+            <h2 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:4px">{% svg_icon 'chart' %} 遗忘曲线复习分布</h2>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:100px;padding:0 4px">
+                {% for item in interval_dist %}
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">
+                    <div style="font-size:11px;color:#888;margin-bottom:4px">{{ item.count }}</div>
+                    <div style="width:100%;max-width:40px;background:#4285f4;border-radius:6px 6px 0 0;height:{% if item.count > 0 %}{% widthratio item.count 5 100 as h %}{% if h > 100 %}100{% else %}{{ h }}{% endif %}{% else %}4{% endif %}%;min-height:8px"></div>
+                    <div style="font-size:11px;color:#888;margin-top:4px">{{ item.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <p style="font-size:12px;color:#999;text-align:center;margin-top:8px">本周预计复习 {{ due_week_count }} 题</p>
+        </div>
+        {% endif %}
+
+        {% if calendar_weeks %}
+        <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <h2 style="font-size:15px;display:flex;align-items:center;gap:4px">{% svg_icon 'pin' %} 复习日历 — {{ month_label }}</h2>
+            </div>
+            <div class="max-review-row">
+                <span>每日最大复习数：</span>
+                <input type="number" id="max-daily" value="5" min="1" max="50" onchange="saveMaxDaily()">
+                <span style="color:#888;font-size:12px">超过的题目顺延至次日</span>
+            </div>
+            <table class="calendar">
+                <thead>
+                    <tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr>
+                </thead>
+                <tbody>
+                    {% for week in calendar_weeks %}
+                    <tr>
+                        {% for cell in week %}
+                        <td>
+                            {% if cell %}
+                            <div class="cal-day{% if cell.count > 0 %} has-review{% endif %}{% if cell.day == today %} today{% endif %}"
+                                 {% if cell.count > 0 %}onclick="showDayDetail('day-{{ cell.day }}', {{ cell.day }})"{% endif %}>
+                                {{ cell.day }}
+                                {% if cell.count > 0 %}<div style="margin-top:2px"><span class="cal-dot" style="background:#fbbc04"></span></div>{% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div id="day-detail-panel" class="day-detail"></div>
+        </div>
+
+        <script>
+        // 存储每日各天的题目数据
+        const dayData = {};
+        {% for week in calendar_weeks %}
+        {% for cell in week %}
+        {% if cell and cell.count > 0 %}
+        dayData[{{ cell.day }}] = {{ cell.questions|safe }};
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+
+        function showDayDetail(panelId, day) {
+            const panel = document.getElementById('day-detail-panel');
+            if (panel.classList.contains('active') && panel.dataset.day == day) {
+                panel.classList.remove('active');
+                return;
+            }
+            panel.dataset.day = day;
+            const qs = dayData[day] || [];
+            let html = '<strong>' + day + '日复习任务 (' + qs.length + '题)</strong>';
+            if (qs.length === 0) {
+                html += '<p style="color:#888;margin-top:6px;font-size:13px">当天无复习任务</p>';
+            } else {
+                qs.forEach(q => {
+                    html += '<div class="dq-item"><span>' + (q.subject ? '[' + q.subject + '] ' : '') + (q.title || '未命名') + '</span><a class="dq-link" href="/errorbook/review/' + q.id + '/">去复习 →</a></div>';
+                });
+            }
+            panel.innerHTML = html;
+            panel.classList.add('active');
+        }
+
+        // 每日最大复习数 — localStorage
+        function saveMaxDaily() {
+            const val = document.getElementById('max-daily').value;
+            localStorage.setItem('max_daily_reviews', val);
+        }
+        (function() {
+            const saved = localStorage.getItem('max_daily_reviews');
+            if (saved) document.getElementById('max-daily').value = saved;
+        })();
+        </script>
+        {% endif %}
+
+        <div class="card">
+            <h2 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:4px">{% svg_icon 'search' %} 手动筛选</h2>
+            <form class="filters" method="get">
+                <select name="subject">
+                    <option value="">全部学科</option>
+                    <option value="数学">数学</option>
+                    <option value="语文">语文</option>
+                    <option value="英语">英语</option>
+                    <option value="物理">物理</option>
+                    <option value="化学">化学</option>
+                    <option value="生物">生物</option>
+                    <option value="历史">历史</option>
+                    <option value="地理">地理</option>
+                    <option value="政治">政治</option>
+                </select>
+                <select name="error_type">
+                    <option value="">全部类型</option>
+                    <option value="concept">概念模糊</option>
+                    <option value="calculation">计算失误</option>
+                    <option value="reading">审题偏差</option>
+                    <option value="method">方法错误</option>
+                    <option value="blind_spot">知识盲区</option>
+                </select>
+                <button type="submit">筛选</button>
+            </form>
+        </div>
+
+        <div class="count-info">共 {{ questions|length }} 道错题待复习</div>
+
+        {% for q in questions %}
+        <div class="card" style="padding:0">
+            <div class="question-item">
+                <div>
+                    <div class="title"><a href="{% url 'review_question' q.id %}">{{ q.title|default:"未命名错题" }}</a></div>
+                    <div class="meta">
+                        {% if q.subject %}<span class="badge badge-subject">{{ q.subject }}</span>{% endif %}
+                        {% if q.error_type %}<span class="badge badge-error">{{ q.get_error_type_display }}</span>{% endif %}
+                        {{ q.created_at|date:"m-d" }}
+                    </div>
+                </div>
+                <a href="{% url 'review_question' q.id %}" class="review-link">开始复习 &rarr;</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty">
+            <p style="font-size:40px;margin-bottom:12px">{% svg_icon 'smile' %}</p>
+            <p>没有找到符合条件的错题</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

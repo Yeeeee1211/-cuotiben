@@ -1,0 +1,25 @@
+# Django
+db.sqlite3
+*.pyc
+*.pyo
+__pycache__/
+
+# Media (user-uploaded files)
+media/questions/*
+!media/questions/.gitkeep
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/

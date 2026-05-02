@@ -1,0 +1,27 @@
+{% load svg_icons %}
+<div class="main-card">
+    <div class="card-header">
+        <span class="card-title">📷 导入错题</span>
+    </div>
+
+    <form method="post" action="/errorbook/import/upload/" enctype="multipart/form-data" data-no-spa>
+        {% csrf_token %}
+        <label for="image-input" class="import-zone" id="drop-zone">
+            <div class="import-icon">📸</div>
+            <div class="import-hint">点击拍照或选择图片</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">支持 JPG、PNG、WEBP 格式</div>
+            <input type="file" id="image-input" name="image" accept="image/*" capture="environment" style="display:none">
+        </label>
+        <div id="preview-container" style="display:none;margin-top:16px;text-align:center">
+            <img id="preview-img" src="" alt="预览" style="max-width:100%;max-height:300px;border-radius:10px">
+            <div style="margin-top:12px">
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px">上传并分析</button>
+            </div>
+        </div>
+    </form>
+
+    <div style="margin-top:20px;font-size:13px;color:var(--text-muted);line-height:1.8">
+        <strong>💡 提示：</strong><br>
+        上传错题图片后，AI 将自动识别题目文字、分析知识点、判断难度和错误类型，帮助你更好地整理和复习错题。
+    </div>
+</div>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+{% load svg_icons %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识图谱 - 智学笔记</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .nav { background: #4285f4; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h1 { font-size: 18px; } .nav a { color: #fff; text-decoration: none; font-size: 14px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .back { display: inline-block; margin-bottom: 12px; color: #4285f4; text-decoration: none; font-size: 14px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .subject-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .subject-name { font-size: 16px; font-weight: 700; color: #333; }
+        .subject-total { font-size: 13px; color: #888; background: #f5f5f5; padding: 3px 10px; border-radius: 10px; }
+        .kp-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .kp-tag { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; text-decoration: none; transition: transform .15s; }
+        .kp-tag:hover { transform: translateY(-1px); }
+        .kp-tag.green { background: #e8f5e9; color: #2e7d32; }
+        .kp-tag.yellow { background: #fff8e1; color: #f57f17; }
+        .kp-tag.red { background: #ffebee; color: #c62828; }
+        .legend { display: flex; gap: 16px; margin-bottom: 20px; font-size: 13px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-dot.green { background: #4caf50; }
+        .legend-dot.yellow { background: #ff9800; }
+        .legend-dot.red { background: #f44336; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 6px; }
+        .bar-label { width: 50px; font-size: 12px; text-align: right; margin-right: 8px; flex-shrink: 0; color: #888; }
+        .bar-container { flex: 1; background: #f0f0f0; border-radius: 6px; height: 20px; }
+        .bar-fill { height: 100%; border-radius: 6px; background: #4285f4; display: flex; align-items: center; padding: 0 8px; font-size: 11px; color: #fff; font-weight: 600; min-width: 24px; }
+        .summary-card { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1 style="display:flex;align-items:center;gap:8px">{% svg_icon 'book_open' %} 知识图谱</h1>
+        {% owl_pet %}
+        <a href="{% url 'index' %}">返回首页</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="back">&larr; 返回仪表盘</a>
+
+        <div class="card summary-card">
+            <div style="display:flex;align-items:center;gap:4px;font-size:14px;font-weight:600;margin-bottom:12px">{% svg_icon 'folder' %} 学科错题总览</div>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-dot green"></span> 较少 (0-2题)</div>
+                <div class="legend-item"><span class="legend-dot yellow"></span> 一般 (3-5题)</div>
+                <div class="legend-item"><span class="legend-dot red"></span> 较多 (6+题)</div>
+            </div>
+            {% for subject, total in subject_totals.items %}
+            {% if total > 0 %}
+            <div class="bar-row">
+                <span class="bar-label">{{ subject }}</span>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width:{% widthratio total 10 100 as pct %}{% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%">{{ total }}</div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if graph_data %}
+        {% for group in graph_data %}
+        <div class="card">
+            <div class="subject-header">
+                <span class="subject-name">{{ group.subject }}</span>
+                <span class="subject-total">{{ group.total }} 道错题</span>
+            </div>
+            <div class="kp-grid">
+                {% for item in group.items %}
+                <a href="{% url 'question_list' %}?subject={{ group.subject }}&kp={{ item.name }}" class="kp-tag {{ item.color }}">
+                    {{ item.name }}{% if item.count > 0 %} <span style="opacity:.7">({{ item.count }})</span>{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty">
+            <p style="font-size:40px;margin-bottom:12px">{% svg_icon 'book_open' %}</p>
+            <p>还没有错题数据，开始导入吧！</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

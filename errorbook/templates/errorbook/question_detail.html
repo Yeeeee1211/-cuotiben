@@ -1,0 +1,68 @@
+{% extends "base_spa.html" %}
+{% load svg_icons %}
+
+{% block title %}{{ question.title|default:"错题详情" }} - 智学笔记{% endblock %}
+
+{% block spa_content %}
+<a href="/errorbook/questions/" style="display:inline-block;margin-bottom:12px;font-size:13px;color:var(--accent);text-decoration:none">&larr; 返回列表</a>
+
+<div class="main-card">
+    <div class="card-header">
+        <span class="card-title">{{ question.title|default:"未命名错题" }}</span>
+        <div style="display:flex;gap:8px">
+            <a href="{% url 'question_edit' question.id %}" class="btn btn-outline" style="font-size:12px">✏️ 编辑</a>
+            <a href="{% url 'review_question' question.id %}" class="btn btn-primary" style="font-size:12px">📝 复习</a>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px">
+        {% if question.subject %}<span class="q-tag tag-math">{{ question.subject }}</span>{% endif %}
+        {% if question.difficulty %}<span class="q-tag" style="background:#fff3e0;color:#e65100">{{ question.get_difficulty_display }}</span>{% endif %}
+        {% if question.error_type %}<span class="q-tag" style="background:#fce4ec;color:#c62828">{{ question.get_error_type_display }}</span>{% endif %}
+        <span style="color:var(--text-muted)">{{ question.knowledge_point|default:"" }}</span>
+    </div>
+
+    {% if question.question_text %}
+    <div style="margin-top:16px">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">📄 题目内容</span>
+        <div style="font-size:15px;line-height:1.9;white-space:pre-wrap;background:var(--surface-secondary);padding:16px;border-radius:10px;margin-top:6px">{{ question.question_text }}</div>
+    </div>
+    {% endif %}
+
+    {% if question.answer_text %}
+    <div style="margin-top:12px">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">✅ 正确答案</span>
+        <div style="font-size:15px;line-height:1.9;white-space:pre-wrap;background:#f0fdf4;padding:16px;border-radius:10px;margin-top:6px">{{ question.answer_text }}</div>
+    </div>
+    {% endif %}
+
+    {% if question.original_image %}
+    <div style="margin-top:12px">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">🖼️ 原题图片</span>
+        <img src="{{ question.original_image.url }}" alt="原题" class="question-image" onclick="window.open(this.src)" style="margin-top:6px">
+    </div>
+    {% endif %}
+
+    {% if question.ocr_raw_text %}
+    <details style="margin-top:12px">
+        <summary style="font-size:13px;color:var(--text-muted);cursor:pointer">OCR 识别文本</summary>
+        <div style="font-size:13px;background:var(--surface-secondary);padding:12px;border-radius:8px;margin-top:6px;white-space:pre-wrap">{{ question.ocr_raw_text }}</div>
+    </details>
+    {% endif %}
+</div>
+
+{% if reviews %}
+<div class="main-card" style="flex:0 0 auto">
+    <span class="card-title">📜 复习记录</span>
+    {% for r in reviews %}
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div style="display:flex;justify-content:space-between">
+            <span style="font-weight:500">{% if r.is_correct %}✅ 正确{% else %}❌ 需改进{% endif %}</span>
+            <span style="color:var(--text-muted);font-size:11px">{{ r.reviewed_at|date:"m-d H:i" }}</span>
+        </div>
+        <div style="color:var(--text-secondary);margin-top:2px">{{ r.student_answer|truncatechars:80 }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base_spa.html" %}
+{% load svg_icons %}
+
+{% block title %}批改结果 - 智学笔记{% endblock %}
+
+{% block spa_content %}
+<a href="{% url 'review_start' %}" style="display:inline-block;margin-bottom:12px;font-size:13px;color:var(--accent);text-decoration:none">&larr; 返回复习列表</a>
+
+<!-- 评分结果 -->
+<div style="text-align:center;padding:28px;border-radius:14px;margin-bottom:16px;{% if record.is_correct %}background:#f0fdf4{% else %}background:#fef2f2{% endif %}">
+    {% if record.is_correct %}
+    <div style="font-size:48px">✅</div>
+    <div class="result-badge correct">回答正确</div>
+    {% else %}
+    <div style="font-size:48px">❌</div>
+    <div class="result-badge wrong">需要改进</div>
+    {% endif %}
+    <div style="font-size:15px;color:var(--text-secondary);margin-top:8px">AI 评分：{{ record.ai_score }}</div>
+</div>
+
+<!-- AI 反馈 -->
+<div class="main-card">
+    <span class="card-title">🤖 AI 批改反馈</span>
+    <div class="feedback-box" style="margin-top:12px;line-height:1.8">{{ record.ai_feedback|default:"暂无反馈" }}</div>
+</div>
+
+<!-- 答案对比 -->
+<div class="main-card">
+    <span class="card-title">📋 答案对比</span>
+    <div class="answer-compare" style="margin-top:12px">
+        <div class="answer-col yours">
+            <div class="col-head">你的回答</div>
+            <div class="col-body">{{ record.student_answer|default:"（未作答）" }}</div>
+        </div>
+        <div class="answer-col correct-ans">
+            <div class="col-head">正确答案</div>
+            <div class="col-body">{{ question.answer_text|default:"（暂无）" }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- 举一反三 -->
+{% if question.question_text and question.answer_text %}
+<div class="main-card">
+    <span class="card-title">🔄 AI 举一反三</span>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">生成一道同类变式题，巩固知识点</p>
+    <button id="generate-similar-btn" data-qid="{{ question.id }}" class="btn btn-primary">✨ 生成变式题</button>
+    <div id="similar-container" style="margin-top:16px"></div>
+</div>
+{% endif %}
+
+<!-- 原题图片 -->
+{% if question.original_image %}
+<div class="main-card">
+    <span class="card-title">🖼️ 原题图片</span>
+    <img src="{{ question.original_image.url }}" alt="原题" class="question-image" onclick="window.open(this.src)">
+</div>
+{% endif %}
+
+<!-- 操作按钮 -->
+<div style="display:flex;gap:12px;margin-top:8px">
+    <a href="{% url 'review_question' question.id %}" class="btn btn-primary" style="flex:1;text-align:center;padding:14px;font-size:15px">再答一次</a>
+    <a href="{% url 'question_detail' question.id %}" class="btn btn-outline" style="flex:1;text-align:center;padding:14px;font-size:15px">查看详情</a>
+</div>
+{% endblock %}

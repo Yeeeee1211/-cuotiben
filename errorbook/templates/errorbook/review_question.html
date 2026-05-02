@@ -1,0 +1,53 @@
+{% extends "base_spa.html" %}
+{% load svg_icons %}
+
+{% block title %}作答 - 智学笔记{% endblock %}
+
+{% block spa_content %}
+<a href="/errorbook/review/" style="display:inline-block;margin-bottom:12px;font-size:13px;color:var(--accent);text-decoration:none">&larr; 返回复习列表</a>
+
+<div class="main-card">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;display:flex;gap:10px;align-items:center">
+        {% if question.subject %}<span class="q-tag tag-math">{{ question.subject }}</span>{% endif %}
+        {% if question.difficulty %}<span class="q-tag" style="background:#fff3e0;color:#e65100">{{ question.get_difficulty_display }}</span>{% endif %}
+        <span>{{ question.knowledge_point|default:"" }}</span>
+    </div>
+
+    <span class="card-title">📄 题目</span>
+    <div style="font-size:15px;line-height:1.9;white-space:pre-wrap;background:var(--surface-secondary);padding:16px;border-radius:10px;margin:12px 0">
+        {{ question.question_text|default:"（题目内容暂缺，请查看原图）" }}
+    </div>
+
+    {% if question.original_image %}
+    <img src="{{ question.original_image.url }}" alt="原题图片" onclick="window.open(this.src)" class="question-image" style="max-height:300px">
+    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">点击图片可放大查看</div>
+    {% endif %}
+</div>
+
+<div class="main-card">
+    <span class="card-title">✏️ 你的回答</span>
+    <form method="post" action="{% url 'review_check' question.id %}" id="answerForm" data-no-spa>
+        {% csrf_token %}
+        <textarea name="student_answer" placeholder="请在此输入你的解答..." required
+            style="width:100%;min-height:150px;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;margin-top:12px"></textarea>
+        <div style="margin-top:12px">
+            <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;font-weight:600;border-radius:10px">
+                📤 提交答案
+            </button>
+        </div>
+    </form>
+    <div id="loading" style="display:none;text-align:center;padding:16px">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted);margin-top:8px;font-size:13px">AI 正在批改...</p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('answerForm').onsubmit = function(e) {
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').textContent = '批改中...';
+        document.getElementById('loading').style.display = 'block';
+        return true;
+    };
+</script>
+{% endblock %}

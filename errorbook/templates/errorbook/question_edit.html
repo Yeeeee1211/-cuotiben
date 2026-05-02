@@ -1,0 +1,61 @@
+{% extends "base_spa.html" %}
+{% load svg_icons %}
+
+{% block title %}编辑错题 - 智学笔记{% endblock %}
+
+{% block spa_content %}
+<a href="{% url 'question_detail' question.id %}" style="display:inline-block;margin-bottom:12px;font-size:13px;color:var(--accent);text-decoration:none">&larr; 返回详情</a>
+
+<div class="main-card">
+    <span class="card-title">✏️ 编辑错题</span>
+    <form method="post" style="display:flex;flex-direction:column;gap:16px;margin-top:16px" data-no-spa>
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">题目名称</label>
+            <input type="text" name="title" value="{{ question.title|default:'' }}" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">学科</label>
+            <select name="subject" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+                <option value="">-- 选择学科 --</option>
+                {% for s in subjects %}
+                <option value="{{ s }}" {% if question.subject == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">错误类型</label>
+            <select name="error_type" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+                <option value="">-- 选择 --</option>
+                <option value="concept" {% if question.error_type == 'concept' %}selected{% endif %}>概念模糊</option>
+                <option value="calculation" {% if question.error_type == 'calculation' %}selected{% endif %}>计算失误</option>
+                <option value="reading" {% if question.error_type == 'reading' %}selected{% endif %}>审题偏差</option>
+                <option value="method" {% if question.error_type == 'method' %}selected{% endif %}>方法错误</option>
+                <option value="blind_spot" {% if question.error_type == 'blind_spot' %}selected{% endif %}>知识盲区</option>
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">难度</label>
+            <select name="difficulty" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+                <option value="">-- 选择 --</option>
+                <option value="easy" {% if question.difficulty == 'easy' %}selected{% endif %}>简单</option>
+                <option value="medium" {% if question.difficulty == 'medium' %}selected{% endif %}>中等</option>
+                <option value="hard" {% if question.difficulty == 'hard' %}selected{% endif %}>困难</option>
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">知识点</label>
+            <input type="text" name="knowledge_point" value="{{ question.knowledge_point|default:'' }}" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">题目内容</label>
+            <textarea name="question_text" style="min-height:100px;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical">{{ question.question_text|default:'' }}</textarea>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary)">正确答案</label>
+            <textarea name="answer_text" style="min-height:100px;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical">{{ question.answer_text|default:'' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding:12px;font-size:15px">💾 保存修改</button>
+    </form>
+</div>
+{% endblock %}

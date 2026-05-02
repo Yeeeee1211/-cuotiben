@@ -1,0 +1,68 @@
+{% extends "base_spa.html" %}
+{% load svg_icons %}
+
+{% block title %}导入结果 - 智学笔记{% endblock %}
+
+{% block spa_content %}
+<a href="/errorbook/import/" style="display:inline-block;margin-bottom:12px;font-size:13px;color:var(--accent);text-decoration:none">&larr; 继续导入</a>
+
+{% if analysis %}
+<div class="main-card">
+    <div style="text-align:center;margin-bottom:16px">
+        <span class="result-badge correct">✅ AI 分析完成</span>
+    </div>
+
+    <span class="card-title">📋 基本信息</span>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;font-size:14px">
+        <div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:60px">标题</span><span>{{ analysis.title|default:"（待编辑）" }}</span></div>
+        <div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:60px">学科</span><span class="q-tag tag-math">{{ analysis.subject|default:"未分类" }}</span></div>
+        <div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:60px">知识点</span><span>{{ analysis.knowledge_point|default:"（待分析）" }}</span></div>
+        <div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:60px">难度</span><span class="q-tag" style="background:#fff3e0;color:#e65100">{{ analysis.difficulty|default:"未评估" }}</span></div>
+        <div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:60px">错误类型</span><span class="q-tag" style="background:#fce4ec;color:#c62828">{{ analysis.error_type|default:"未分类" }}</span></div>
+    </div>
+</div>
+
+<div class="main-card">
+    <span class="card-title">📝 题目内容</span>
+    <div style="white-space:pre-wrap;font-size:14px;line-height:1.8;background:var(--surface-secondary);padding:16px;border-radius:10px;margin-top:8px">{{ analysis.question_text|default:"（识别失败）" }}</div>
+</div>
+
+<div class="main-card">
+    <span class="card-title">✅ 正确答案</span>
+    <div style="white-space:pre-wrap;font-size:14px;line-height:1.8;background:#f0fdf4;padding:16px;border-radius:10px;margin-top:8px">{{ analysis.answer_text|default:"（AI未能提取答案）" }}</div>
+</div>
+
+<div class="main-card">
+    <span class="card-title">📷 原始图片</span>
+    <img src="{{ question.original_image.url }}" alt="错题原图" class="question-image" style="margin-top:8px">
+</div>
+
+<div style="display:flex;gap:12px;margin-top:8px">
+    <a href="{% url 'question_edit' question.id %}" class="btn btn-primary" style="flex:1;text-align:center;padding:14px">✏️ 编辑完善</a>
+    <a href="/errorbook/review/{{ question.id }}/" class="btn btn-outline" style="flex:1;text-align:center;padding:14px">📝 开始复习</a>
+</div>
+
+{% elif ocr_text %}
+<div class="main-card">
+    <div style="text-align:center;margin-bottom:16px">
+        <span class="result-badge" style="background:#fff3e0;color:#e65100">⚠️ AI 分析失败，仅完成 OCR</span>
+    </div>
+    <span class="card-title">OCR 识别文本</span>
+    <div style="white-space:pre-wrap;font-size:14px;line-height:1.8;background:var(--surface-secondary);padding:16px;border-radius:10px;margin-top:8px">{{ ocr_text }}</div>
+    {% if ai_error %}<p style="color:var(--danger);font-size:12px;margin-top:8px">{{ ai_error }}</p>{% endif %}
+</div>
+<div style="margin-top:12px">
+    <a href="{% url 'question_edit' question.id %}" class="btn btn-primary" style="display:block;text-align:center;padding:14px">✏️ 手动编辑</a>
+</div>
+
+{% else %}
+<div class="main-card">
+    <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">❌</div>
+        <span class="card-title">导入失败</span>
+        {% if ocr_error %}<p style="color:var(--danger);margin-top:8px;font-size:13px">{{ ocr_error }}</p>{% endif %}
+        {% if ai_error %}<p style="color:var(--danger);margin-top:4px;font-size:13px">{{ ai_error }}</p>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
